@@ -1,0 +1,101 @@
+﻿@model List<MixtureOptimization.Models.Material>
+@{
+    var lowerLimits = (List<int>)ViewBag.LowerLimits;
+    var results = ViewBag.Results as List<MixtureOptimization.Models.Result>;
+    var totalCost = ViewBag.TotalCost as double?;
+}
+<form asp-action="Calculate" method="post">
+    <table>
+        <thead>
+            <tr>
+                <th>Название вещества / Материал</th>
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    <th>
+                        <input type="text" name="materials[@i].Name" value="@Model[i].Name" readonly />
+                    </th>
+                }
+                <th>Нижний предел (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int j = 0; j < Model[0].Parameters.Count; j++)
+            {
+                <tr>
+                    <td>B@((j + 1)) (грамм)</td>
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        <td>
+                            <input type="number" name="materials[@i].Parameters[@j]" value="@Model[i].Parameters[j]" />
+                        </td>
+                    }
+                    <td>
+                        <input type="number" name="lowerLimits[@j]" value="@lowerLimits[j]" step="1" />
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td>Стоимость (за кг)</td>
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    <td>
+                        <input type="number" name="materials[@i].Cost" step="0.01" value="@Model[i].Cost" />
+                    </td>
+                }
+                <td>&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+    <button type="submit">Рассчитать</button>
+</form>
+
+<form asp-action="ExportToExcel" method="post">
+    @for (int i = 0; i < Model.Count; i++)
+    {
+        <input type="hidden" name="materials[@i].Name" value="@Model[i].Name" />
+        <input type="hidden" name="materials[@i].Cost" value="@Model[i].Cost" />
+        @for (int j = 0; j < Model[i].Parameters.Count; j++)
+        {
+            <input type="hidden" name="materials[@i].Parameters[@j]" value="@Model[i].Parameters[j]" />
+        }
+    }
+    @for (int j = 0; j < lowerLimits.Count; j++)
+    {
+        <input type="hidden" name="lowerLimits[@j]" value="@lowerLimits[j]" />
+    }
+    @if (results != null)
+    {
+        @for (int i = 0; i < results.Count; i++)
+        {
+            <input type="hidden" name="results[@i].Name" value="@results[i].Name" />
+            <input type="hidden" name="results[@i].Amount" value="@results[i].Amount" />
+            <input type="hidden" name="results[@i].Cost" value="@results[i].Cost" />
+        }
+    }
+    <button type="submit">Экспортировать в Excel</button>
+</form>
+
+@if (results != null)
+{
+    <h2>Результаты расчета</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Название материала</th>
+                <th>Количество (кг)</th>
+                <th>Стоимость (у.е.)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var result in results)
+            {
+                <tr>
+                    <td>@result.Name</td>
+                    <td>@result.Amount</td>
+                    <td>@result.Cost</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <h3>Общая стоимость: @totalCost у.е.</h3>
+}
